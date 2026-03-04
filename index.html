@@ -3,191 +3,461 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>랜덤 짝 매칭기</title>
+    <title>통합 랜덤 매칭기 - V10.0</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        :root { --primary: #4a90e2; --bg: #f5f7fa; --text: #333; --accent: #34c759; --danger: #ff4d4d; }
-        body { font-family: 'Pretendard', -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 20px; display: flex; justify-content: center; }
-        .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
-        h1 { text-align: center; color: var(--primary); font-size: 24px; margin-bottom: 20px; }
-        
-        .status-bar { background: #333; color: white; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; display: flex; justify-content: space-around; font-weight: bold; }
-        
-        .section { margin-bottom: 25px; }
-        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; color: #555; }
-        textarea, input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none; }
-        textarea { height: 120px; resize: none; margin-bottom: 8px; }
-        
-        /* 실시간 인원 표시 강조 */
-        .count-display { background: #f0f7ff; color: #357abd; padding: 10px; border-radius: 8px; font-size: 15px; font-weight: bold; text-align: center; margin-bottom: 10px; border: 1px dashed #357abd; }
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
 
-        .location-item { display: flex; gap: 8px; margin-bottom: 8px; }
-        .location-item input[type="text"] { flex: 3; }
-        .location-item input[type="number"] { flex: 1; }
-        .btn-remove { background: var(--danger); color: white; border: none; width: 40px; border-radius: 8px; cursor: pointer; }
-        
-        button { cursor: pointer; border: none; border-radius: 8px; font-weight: bold; transition: 0.2s; }
-        button:active { transform: scale(0.98); }
+        /* 전체 배경 및 폰트 */
+        body {
+            background-color: #f8fafc; /* 부드러운 쿨그레이 배경 */
+            font-family: 'Pretendard', sans-serif;
+            letter-spacing: -0.02em;
+            color: #334155;
+        }
 
-        .btn-add { background: #f0f0f0; color: #666; padding: 10px; width: 100%; margin-bottom: 10px; }
-        .btn-main { width: 100%; background: var(--primary); color: white; padding: 16px; font-size: 16px; margin-top: 10px; }
-        .btn-copy { background: var(--accent); color: white; width: 100%; padding: 16px; font-size: 16px; margin-top: 15px; display: none; }
-        .btn-reset { background: none; color: #999; text-decoration: underline; font-size: 12px; margin-top: 30px; width: 100%; text-align: center; padding: 10px; }
-        .btn-reset:hover { color: var(--danger); }
-        
-        #result { margin-top: 25px; border-top: 2px dashed #eee; padding-top: 20px; }
-        .result-card { background: #fff; border: 1px solid #eee; border-left: 5px solid var(--primary); padding: 12px; margin-bottom: 10px; border-radius: 8px; }
-        .result-card h4 { margin: 0 0 8px 0; font-size: 14px; color: #444; }
-        .name-tag { display: inline-block; background: #f0f7ff; color: #357abd; padding: 4px 10px; margin: 2px; border-radius: 6px; font-size: 13px; }
-        
-        .highlight { color: #ffeb3b; }
+        /* 카드 스타일링 */
+        .card {
+            border-radius: 1.25rem;
+            border: none;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.03);
+            transition: transform 0.2s ease;
+        }
+
+        /* 메인 버튼 */
+        .btn-main {
+            background: linear-gradient(135deg, #6366f1, #4f46e5); /* 고급스러운 인디고 그라데이션 */
+            border: none;
+            border-radius: 1rem;
+            padding: 1rem;
+            font-weight: 700;
+            font-size: 1.1rem;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-main:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(79, 70, 229, 0.3);
+        }
+
+        /* 네비게이션 탭 */
+        .nav-pills {
+            background-color: #ffffff;
+            border-radius: 1rem;
+            padding: 0.35rem;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+        }
+        .nav-pills .nav-link {
+            border-radius: 0.75rem;
+            font-weight: 600;
+            font-size: 15px;
+            color: #64748b;
+            transition: 0.2s;
+        }
+        .nav-pills .nav-link.active {
+            background-color: #4f46e5;
+            color: white;
+            box-shadow: 0 4px 10px rgba(79, 70, 229, 0.2);
+        }
+
+        /* 장소 아이템 (리스트) */
+        .loc-item {
+            background: #ffffff;
+            border-radius: 1rem;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 12px;
+            padding: 12px 16px;
+            transition: border-color 0.2s;
+        }
+        .loc-item:hover {
+            border-color: #cbd5e1;
+        }
+        .form-control {
+            border-radius: 0.5rem;
+            border: 1px solid #e2e8f0;
+            padding: 0.6rem 1rem;
+        }
+        .form-control:focus {
+            border-color: #818cf8;
+            box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.1);
+        }
+
+        /* 하단 추가 버튼 */
+        .btn-add-bottom {
+            border: 2px dashed #cbd5e1;
+            background: transparent;
+            color: #64748b;
+            border-radius: 1rem;
+            padding: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+        }
+        .btn-add-bottom:hover {
+            border-color: #6366f1;
+            color: #6366f1;
+            background: #eef2ff;
+        }
+
+        /* 배지 (이름 태그) */
+        .name-tag {
+            margin: 3px;
+            font-size: 0.9rem;
+            padding: 0.5em 0.9em;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            display: inline-block;
+        }
+        .badge-male { background-color: #e0f2fe; color: #0284c7; border: 1px solid #bae6fd; }
+        .badge-female { background-color: #fce7f3; color: #db2777; border: 1px solid #fbcfe8; }
+        .badge-general { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+
+        /* 텍스트 색상 커스텀 */
+        .text-indigo { color: #4f46e5 !important; }
+        .text-rose { color: #e11d48 !important; }
+        .text-sky { color: #0284c7 !important; }
     </style>
 </head>
-<body>
+<body class="py-5">
 
-<div class="container">
-    <h1>🎲 랜덤 짝 매칭기</h1>
-    
-    <div class="status-bar">
-        <span>명단 <span id="totalNameCountTop" class="highlight">0</span>명</span>
-        <span>|</span>
-        <span>배정 정원 <span id="totalCapacityCount" class="highlight">0</span>명</span>
+<div class="container" style="max-width: 520px;">
+    <h2 class="text-center fw-bolder mb-4 text-indigo">🎲 통합 랜덤 매칭기</h2>
+
+    <ul class="nav nav-pills nav-fill mb-4" id="modeTab">
+        <li class="nav-item">
+            <button class="nav-link active" onclick="switchMode('gen')">일반 모드</button>
+        </li>
+        <li class="nav-item">
+            <button class="nav-link" onclick="switchMode('sex')">성별 모드</button>
+        </li>
+    </ul>
+
+    <div class="card mb-4">
+        <div class="card-body p-4 text-center">
+            <div id="stat-gen" class="row align-items-center">
+                <div class="col-6 border-end">
+                    <div class="small fw-semibold text-muted mb-1">입력 인원</div>
+                    <div id="cnt-gen-in" class="h4 fw-bolder text-dark mb-0">0</div>
+                </div>
+                <div class="col-6">
+                    <div class="small fw-semibold text-muted mb-1">배정 정원</div>
+                    <div id="cap-gen-out" class="h4 fw-bolder text-indigo mb-0">0</div>
+                </div>
+            </div>
+            <div id="stat-sex" class="row align-items-center d-none">
+                <div class="col-6 border-end">
+                    <div class="small fw-semibold text-muted mb-1">여성 (입력/배정)</div>
+                    <div class="h5 fw-bolder text-rose mb-0"><span id="cnt-f-in">0</span> <span class="text-muted fw-normal mx-1">/</span> <span id="cap-f-out">0</span></div>
+                </div>
+                <div class="col-6">
+                    <div class="small fw-semibold text-muted mb-1">남성 (입력/배정)</div>
+                    <div class="h5 fw-bolder text-sky mb-0"><span id="cnt-m-in">0</span> <span class="text-muted fw-normal mx-1">/</span> <span id="cap-m-out">0</span></div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="section">
-        <label>1. 참여자 명단 입력</label>
-        <textarea id="nameInput" placeholder="이름들을 복사해서 붙여넣으세요(예시) 홍길동 김길동)" oninput="saveData()"></textarea>
-        <div class="count-display">📊 현재 입력된 참여자: <span id="realtimeCount">0</span>명</div>
+    <div class="card mb-4">
+        <div class="card-body p-4">
+            <div id="area-gen-input">
+                <label class="form-label fw-bold small text-muted">참여자 명단</label>
+                <textarea id="input-gen" class="form-control" rows="4" placeholder="예: 홍길동 김철수 이영희 (공백, 콤마, 줄바꿈으로 구분)" oninput="updateAll()"></textarea>
+            </div>
+            <div id="area-sex-input" class="d-none">
+                <label class="form-label fw-bold text-rose small">여성 명단</label>
+                <textarea id="input-f" class="form-control mb-3" rows="2" placeholder="예: 홍길동 김철수 이영희 (공백, 콤마, 줄바꿈으로 구분)" oninput="updateAll()"></textarea>
+                <label class="form-label fw-bold text-sky small">남성 명단</label>
+                <textarea id="input-m" class="form-control" rows="2" placeholder="예: 홍길동 김철수 이영희 (공백, 콤마, 줄바꿈으로 구분)" oninput="updateAll()"></textarea>
+            </div>
+        </div>
     </div>
 
-    <div class="section">
-        <label>2. 장소별 정원 설정</label>
-        <div id="locationList"></div>
-        <button class="btn-add" onclick="addLocation()">+ 장소 추가</button>
+    <div class="card mb-4">
+        <div class="card-header bg-transparent border-0 pt-4 pb-2 px-4">
+            <span class="fw-bold small text-muted">📍 장소 및 인원 설정</span>
+        </div>
+        <div class="card-body px-4 pb-4 pt-2">
+            <div id="list-gen"></div>
+            <div id="list-sex" class="d-none"></div>
+            <button id="btn-add" class="btn btn-add-bottom w-100 mt-3">+ 새로운 장소 추가</button>
+        </div>
     </div>
 
-    <button class="btn-main" onclick="startMatching()">결과 생성하기 ✨</button>
+    <button class="btn btn-main w-100 mb-4" onclick="executeMatching()">매칭 시작 ✨</button>
 
-    <div id="result">
-        <div id="visualResult"></div>
-        <button id="copyBtn" class="btn-copy" onclick="copyResult()">📋 결과 복사하기</button>
+    <div id="res-area" style="display: none;">
+        <div class="card mb-4 border-0" style="background: #ffffff; border: 2px solid #eef2ff;">
+            <div class="card-header bg-transparent border-0 fw-bolder text-indigo py-3 px-4 text-center" style="font-size: 1.1rem;">
+                🎊 매칭 결과
+            </div>
+            <div class="card-body p-4 pt-0">
+                <div id="res-visual"></div>
+                <button id="btn-copy" class="btn w-100 mt-4 py-2 fw-bold" style="background: #f1f5f9; color: #475569; border-radius: 0.75rem;" onclick="copyResult()">
+                    📋 텍스트로 결과 복사
+                </button>
+            </div>
+        </div>
     </div>
 
-    <button class="btn-reset" onclick="resetAll()">데이터 전체 초기화</button>
+    <button class="btn w-100 py-2 fw-semibold mb-5 text-muted" style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 0.75rem;" onclick="clearData()">
+        ⚠️ 전체 데이터 초기화
+    </button>
 </div>
 
 <script>
+    let currentMode = 'gen';
+
+    // 초기 데이터 로드
     window.onload = () => {
-        const savedNames = localStorage.getItem('match_names');
-        const savedLocs = JSON.parse(localStorage.getItem('match_locs'));
-        if (savedNames) document.getElementById('nameInput').value = savedNames;
-        if (savedLocs && savedLocs.length > 0) {
-            savedLocs.forEach(loc => addLocation(loc.name, loc.count));
+        const saved = JSON.parse(localStorage.getItem('match_v10')) || {};
+        currentMode = saved.mode || 'gen';
+
+        document.getElementById('input-gen').value = saved.genIn || "";
+        document.getElementById('input-f').value = saved.fIn || "";
+        document.getElementById('input-m').value = saved.mIn || "";
+
+        if (saved.locsGen && saved.locsGen.length > 0) {
+            saved.locsGen.forEach(l => addRowGen(l.n, l.v));
         } else {
-            addLocation("장소 1", 2);
+            addRowGen("장소 1", 2);
         }
-        updateCounts();
+
+        if (saved.locsSex && saved.locsSex.length > 0) {
+            saved.locsSex.forEach(l => addRowSex(l.n, l.m, l.f));
+        } else {
+            addRowSex("장소 1", 1, 1);
+        }
+
+        switchMode(currentMode);
     };
 
-    function updateCounts() {
-        const names = document.getElementById('nameInput').value.split(/[\s,]+/).filter(n => n.trim() !== "");
-        const count = names.length;
-        
-        // 상단바와 실시간 표시창 동시 업데이트
-        document.getElementById('totalNameCountTop').innerText = count;
-        document.getElementById('realtimeCount').innerText = count;
+    // 모드 전환
+    function switchMode(mode) {
+        currentMode = mode;
 
-        let cap = 0;
-        document.querySelectorAll('.loc-count').forEach(i => cap += parseInt(i.value) || 0);
-        document.getElementById('totalCapacityCount').innerText = cap;
+        // 탭 활성화 처리
+        document.querySelectorAll('#modeTab .nav-link').forEach((btn, idx) => {
+            btn.classList.toggle('active', (idx === 0 && mode === 'gen') || (idx === 1 && mode === 'sex'));
+        });
+
+        // UI 영역 토글
+        document.getElementById('stat-gen').classList.toggle('d-none', mode !== 'gen');
+        document.getElementById('stat-sex').classList.toggle('d-none', mode === 'gen');
+        document.getElementById('area-gen-input').classList.toggle('d-none', mode !== 'gen');
+        document.getElementById('area-sex-input').classList.toggle('d-none', mode === 'gen');
+        document.getElementById('list-gen').classList.toggle('d-none', mode !== 'gen');
+        document.getElementById('list-sex').classList.toggle('d-none', mode === 'gen');
+
+        // 추가 버튼 동작 변경
+        document.getElementById('btn-add').onclick = (mode === 'gen') ? () => addRowGen() : () => addRowSex();
+
+        updateAll();
     }
 
-    function saveData() {
-        updateCounts();
-        localStorage.setItem('match_names', document.getElementById('nameInput').value);
-        const locs = Array.from(document.querySelectorAll('.location-item')).map(item => ({
-            name: item.querySelector('.loc-name').value,
-            count: item.querySelector('.loc-count').value
-        }));
-        localStorage.setItem('match_locs', JSON.stringify(locs));
-    }
-
-    function addLocation(name = "", count = "") {
-        const container = document.getElementById('locationList');
+    // 일반 장소 행 추가
+    function addRowGen(name = "", val = 2) {
         const div = document.createElement('div');
-        div.className = 'location-item';
+        div.className = 'loc-item gen-row';
         div.innerHTML = `
-            <input type="text" class="loc-name" placeholder="장소명" value="${name}" oninput="saveData()">
-            <input type="number" class="loc-count" placeholder="명" value="${count}" oninput="saveData()">
-            <button class="btn-remove" onclick="this.parentElement.remove(); saveData();">✕</button>
+            <div class="row gx-2 align-items-center">
+                <div class="col">
+                    <input type="text" class="form-control fw-bold border-0 bg-light l-n" placeholder="장소명" value="${name}" oninput="updateAll()">
+                </div>
+                <div class="col-3">
+                    <input type="number" class="form-control text-center l-v fw-bold text-indigo" value="${val}" min="0" oninput="updateAll()">
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-sm text-muted p-2" onclick="this.closest('.loc-item').remove(); updateAll();">✕</button>
+                </div>
+            </div>
         `;
-        container.appendChild(div);
-        updateCounts();
+        document.getElementById('list-gen').appendChild(div);
+        updateAll();
     }
 
-    let resultText = "";
+    // 성별 장소 행 추가
+    function addRowSex(name = "", m = 1, f = 1) {
+        const div = document.createElement('div');
+        div.className = 'loc-item sex-row';
+        div.innerHTML = `
+            <div class="row gx-2 align-items-center">
+                <div class="col">
+                    <input type="text" class="form-control fw-bold border-0 bg-light s-n" placeholder="장소명" value="${name}" oninput="updateAll()">
+                </div>
+                <div class="col-auto d-flex gap-2">
+                    <input type="number" class="form-control text-center s-f fw-bold text-rose" style="width: 60px; background-color: #fdf2f8; border-color: #fbcfe8;" value="${f}" min="0" title="여성 인원" oninput="updateAll()">
+                    <input type="number" class="form-control text-center s-m fw-bold text-sky" style="width: 60px; background-color: #f0f9ff; border-color: #bae6fd;" value="${m}" min="0" title="남성 인원" oninput="updateAll()">
+                </div>
+                <div class="col-auto">
+                    <button class="btn btn-sm text-muted p-2" onclick="this.closest('.loc-item').remove(); updateAll();">✕</button>
+                </div>
+            </div>
+        `;
+        document.getElementById('list-sex').appendChild(div);
+        updateAll();
+    }
 
-    function startMatching() {
-        const namesIn = document.getElementById('nameInput').value.split(/[\s,]+/).filter(n => n.trim() !== "");
-        if (namesIn.length === 0) return alert("참여자 이름을 먼저 입력해주세요!");
+    // 통계 및 스토리지 업데이트
+    function updateAll() {
+        const getLen = id => document.getElementById(id).value.split(/[\s,]+/).filter(n => n.trim() !== "").length;
 
-        let names = [...namesIn];
-        for (let i = names.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [names[i], names[j]] = [names[j], names[i]];
-        }
+        // 일반 통계
+        document.getElementById('cnt-gen-in').innerText = getLen('input-gen');
+        let capG = 0;
+        document.querySelectorAll('.gen-row').forEach(r => capG += parseInt(r.querySelector('.l-v').value) || 0);
+        document.getElementById('cap-gen-out').innerText = capG;
 
-        const visualDiv = document.getElementById('visualResult');
-        visualDiv.innerHTML = '';
-        resultText = "📢 [랜덤 매칭 결과]\n";
+        // 성별 통계
+        document.getElementById('cnt-f-in').innerText = getLen('input-f');
+        document.getElementById('cnt-m-in').innerText = getLen('input-m');
+        let capF = 0, capM = 0;
+        document.querySelectorAll('.sex-row').forEach(r => {
+            capM += parseInt(r.querySelector('.s-m').value) || 0;
+            capF += parseInt(r.querySelector('.s-f').value) || 0;
+        });
+        document.getElementById('cap-f-out').innerText = capF;
+        document.getElementById('cap-m-out').innerText = capM;
 
-        let idx = 0;
-        document.querySelectorAll('.location-item').forEach(item => {
-            const locName = item.querySelector('.loc-name').value || "장소";
-            const locCount = parseInt(item.querySelector('.loc-count').value) || 0;
-            const assigned = names.slice(idx, idx + locCount);
-            idx += locCount;
+        saveData();
+    }
 
-            if (assigned.length > 0) {
-                const card = document.createElement('div');
-                card.className = 'result-card';
-                card.innerHTML = `<h4>📌 ${locName} (${assigned.length}명)</h4>`;
-                assigned.forEach(name => card.innerHTML += `<span class="name-tag">${name}</span>`);
-                visualDiv.appendChild(card);
-                resultText += `\n[${locName}]\n- ${assigned.join(', ')}\n`;
+    // 로컬 스토리지 저장
+    function saveData() {
+        const locsGen = Array.from(document.querySelectorAll('.gen-row')).map(r => ({
+            n: r.querySelector('.l-n').value,
+            v: r.querySelector('.l-v').value
+        }));
+        const locsSex = Array.from(document.querySelectorAll('.sex-row')).map(r => ({
+            n: r.querySelector('.s-n').value,
+            m: r.querySelector('.s-m').value,
+            f: r.querySelector('.s-f').value
+        }));
+
+        localStorage.setItem('match_v10', JSON.stringify({
+            mode: currentMode,
+            genIn: document.getElementById('input-gen').value,
+            fIn: document.getElementById('input-f').value,
+            mIn: document.getElementById('input-m').value,
+            locsGen,
+            locsSex
+        }));
+    }
+
+    // 매칭 실행 로직
+    function executeMatching() {
+        const visual = document.getElementById('res-visual');
+        visual.innerHTML = '';
+        document.getElementById('res-area').style.display = 'block';
+
+        let resultTxt = `📢 [${currentMode === 'gen' ? '일반' : '성별'} 매칭 결과]\n`;
+
+        if (currentMode === 'gen') {
+            let names = document.getElementById('input-gen').value.split(/[\s,]+/).filter(n => n.trim() !== "").sort(() => Math.random() - 0.5);
+            let idx = 0;
+
+            document.querySelectorAll('.gen-row').forEach(r => {
+                const ln = r.querySelector('.l-n').value || "장소 미지정";
+                const lv = parseInt(r.querySelector('.l-v').value) || 0;
+                const assigned = names.slice(idx, idx + lv);
+                idx += lv;
+
+                visual.innerHTML += `
+                    <div class="mb-3 p-3 bg-light rounded-4 text-start">
+                        <h6 class="fw-bold mb-2 text-indigo">📍 ${ln} <span class="text-muted small fw-normal">(${assigned.length}명)</span></h6>
+                        <div>${assigned.map(n => `<span class="badge-general name-tag">${n}</span>`).join('') || '<span class="text-muted small">배정된 인원이 없습니다.</span>'}</div>
+                    </div>
+                `;
+                resultTxt += `\n[${ln}] ${assigned.join(', ') || '없음'}\n`;
+            });
+
+            const left = names.slice(idx);
+            if (left.length > 0) {
+                visual.innerHTML += `
+                    <div class="mt-4 p-3 rounded-4 text-start" style="background-color: #f8fafc; border: 1px dashed #cbd5e1;">
+                        <h6 class="fw-bold mb-2 text-muted">⚠️ 미배정 (${left.length}명)</h6>
+                        <div>${left.map(n => `<span class="badge bg-secondary name-tag text-white">${n}</span>`).join('')}</div>
+                    </div>
+                `;
+                resultTxt += `\n[미배정] ${left.join(', ')}\n`;
             }
-        });
+        } else {
+            let mn = document.getElementById('input-m').value.split(/[\s,]+/).filter(n => n.trim() !== "").sort(() => Math.random() - 0.5);
+            let fn = document.getElementById('input-f').value.split(/[\s,]+/).filter(n => n.trim() !== "").sort(() => Math.random() - 0.5);
+            let mi = 0, fi = 0;
 
-        const leftovers = names.slice(idx);
-        if (leftovers.length > 0) {
-            const card = document.createElement('div');
-            card.className = 'result-card';
-            card.style.borderLeftColor = '#999';
-            card.innerHTML = `<h4 style="color:#666;">⚠️ 미배정 (${leftovers.length}명)</h4>`;
-            leftovers.forEach(name => card.innerHTML += `<span class="name-tag" style="background:#eee; color:#666;">${name}</span>`);
-            visualDiv.appendChild(card);
-            resultText += `\n[미배정 인원]\n- ${leftovers.join(', ')}\n`;
+            document.querySelectorAll('.sex-row').forEach(r => {
+                const sn = r.querySelector('.s-n').value || "장소 미지정";
+                const sm = parseInt(r.querySelector('.s-m').value) || 0;
+                const sf = parseInt(r.querySelector('.s-f').value) || 0;
+
+                const am = mn.slice(mi, mi + sm);
+                const af = fn.slice(fi, fi + sf);
+                mi += sm;
+                fi += sf;
+
+                visual.innerHTML += `
+                    <div class="mb-3 p-3 bg-light rounded-4 text-start">
+                        <h6 class="fw-bold text-indigo mb-3">📍 ${sn}</h6>
+                        <div class="mb-2">
+                            <span class="fw-bold text-rose small me-2">여</span>
+                            ${af.map(n => `<span class="badge-female name-tag">${n}</span>`).join('') || '<span class="text-muted small">-</span>'}
+                        </div>
+                        <div>
+                            <span class="fw-bold text-sky small me-2">남</span>
+                            ${am.map(n => `<span class="badge-male name-tag">${n}</span>`).join('') || '<span class="text-muted small">-</span>'}
+                        </div>
+                    </div>
+                `;
+                resultTxt += `\n[${sn}]\n- 여: ${af.join(', ') || '없음'}\n- 남: ${am.join(', ') || '없음'}\n`;
+            });
+
+            const lm = mn.slice(mi), lf = fn.slice(fi);
+            if (lm.length + lf.length > 0) {
+                visual.innerHTML += `
+                    <div class="mt-4 p-3 rounded-4 text-start" style="background-color: #f8fafc; border: 1px dashed #cbd5e1;">
+                        <h6 class="fw-bold mb-3 text-muted">⚠️ 미배정 인원</h6>
+                        <div class="mb-2">
+                            <span class="text-muted fw-bold small me-2">여 (${lf.length})</span>
+                            ${lf.map(n => `<span class="badge bg-secondary name-tag text-white">${n}</span>`).join('') || '<span class="text-muted small">-</span>'}
+                        </div>
+                        <div>
+                            <span class="text-muted fw-bold small me-2">남 (${lm.length})</span>
+                            ${lm.map(n => `<span class="badge bg-secondary name-tag text-white">${n}</span>`).join('') || '<span class="text-muted small">-</span>'}
+                        </div>
+                    </div>
+                `;
+                resultTxt += `\n[미배정]\n- 여: ${lf.join(', ') || '없음'}\n- 남: ${lm.join(', ') || '없음'}\n`;
+            }
         }
 
-        document.getElementById('copyBtn').style.display = 'block';
-        visualDiv.scrollIntoView({ behavior: 'smooth' });
+        window.resContent = resultTxt;
+
+        // 결과창으로 부드럽게 스크롤
+        setTimeout(() => {
+            document.getElementById('res-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
     }
 
+    // 결과 복사 로직
     function copyResult() {
-        navigator.clipboard.writeText(resultText).then(() => {
-            const btn = document.getElementById('copyBtn');
-            btn.innerText = "✅ 복사되었습니다!";
-            setTimeout(() => btn.innerText = "📋 결과 복사하기", 2000);
+        navigator.clipboard.writeText(window.resContent).then(() => {
+            const b = document.getElementById('btn-copy');
+            b.innerText = "✅ 복사 완료!";
+            b.style.background = "#e2e8f0";
+            setTimeout(() => {
+                b.innerText = "📋 텍스트로 결과 복사";
+                b.style.background = "#f1f5f9";
+            }, 2000);
         });
     }
 
-    function resetAll() {
-        if(confirm("모든 입력 내용과 저장된 데이터를 삭제하시겠습니까?")) {
-            localStorage.clear();
+    // 데이터 초기화
+    function clearData() {
+        if(confirm("모든 설정과 명단을 초기화하시겠습니까?")) {
+            localStorage.removeItem('match_v10');
             location.reload();
         }
     }
 </script>
-
 </body>
-
 </html>
