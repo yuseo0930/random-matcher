@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>랜덤 짝 매칭기</title>
+    <style>
+        :root { --primary: #4a90e2; --bg: #f5f7fa; --text: #333; --accent: #34c759; --danger: #ff4d4d; }
+        body { font-family: 'Pretendard', -apple-system, sans-serif; background: var(--bg); color: var(--text); padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 500px; background: white; padding: 25px; border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.05); }
+        h1 { text-align: center; color: var(--primary); font-size: 24px; margin-bottom: 20px; }
+        
+        .status-bar { background: #333; color: white; padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 14px; display: flex; justify-content: space-around; font-weight: bold; }
+        
+        .section { margin-bottom: 25px; }
+        label { display: block; font-weight: bold; margin-bottom: 8px; font-size: 14px; color: #555; }
+        textarea, input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-size: 14px; outline: none; }
+        textarea { height: 120px; resize: none; margin-bottom: 8px; }
+        
+        /* 실시간 인원 표시 강조 */
+        .count-display { background: #f0f7ff; color: #357abd; padding: 10px; border-radius: 8px; font-size: 15px; font-weight: bold; text-align: center; margin-bottom: 10px; border: 1px dashed #357abd; }
+
+        .location-item { display: flex; gap: 8px; margin-bottom: 8px; }
+        .location-item input[type="text"] { flex: 3; }
+        .location-item input[type="number"] { flex: 1; }
+        .btn-remove { background: var(--danger); color: white; border: none; width: 40px; border-radius: 8px; cursor: pointer; }
+        
+        button { cursor: pointer; border: none; border-radius: 8px; font-weight: bold; transition: 0.2s; }
+        button:active { transform: scale(0.98); }
+
+        .btn-add { background: #f0f0f0; color: #666; padding: 10px; width: 100%; margin-bottom: 10px; }
+        .btn-main { width: 100%; background: var(--primary); color: white; padding: 16px; font-size: 16px; margin-top: 10px; }
+        .btn-copy { background: var(--accent); color: white; width: 100%; padding: 16px; font-size: 16px; margin-top: 15px; display: none; }
+        .btn-reset { background: none; color: #999; text-decoration: underline; font-size: 12px; margin-top: 30px; width: 100%; text-align: center; padding: 10px; }
+        .btn-reset:hover { color: var(--danger); }
+        
+        #result { margin-top: 25px; border-top: 2px dashed #eee; padding-top: 20px; }
+        .result-card { background: #fff; border: 1px solid #eee; border-left: 5px solid var(--primary); padding: 12px; margin-bottom: 10px; border-radius: 8px; }
+        .result-card h4 { margin: 0 0 8px 0; font-size: 14px; color: #444; }
+        .name-tag { display: inline-block; background: #f0f7ff; color: #357abd; padding: 4px 10px; margin: 2px; border-radius: 6px; font-size: 13px; }
+        
+        .highlight { color: #ffeb3b; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🎲 랜덤 짝 매칭기</h1>
+    
+    <div class="status-bar">
+        <span>명단 <span id="totalNameCountTop" class="highlight">0</span>명</span>
+        <span>|</span>
+        <span>배정 정원 <span id="totalCapacityCount" class="highlight">0</span>명</span>
+    </div>
+
+    <div class="section">
+        <label>1. 참여자 명단 입력</label>
+        <textarea id="nameInput" placeholder="이름들을 복사해서 붙여넣으세요" oninput="saveData()"></textarea>
+        <div class="count-display">📊 현재 입력된 참여자: <span id="realtimeCount">0</span>명</div>
+    </div>
+
+    <div class="section">
+        <label>2. 장소별 정원 설정</label>
+        <div id="locationList"></div>
+        <button class="btn-add" onclick="addLocation()">+ 장소 추가</button>
+    </div>
+
+    <button class="btn-main" onclick="startMatching()">결과 생성하기 ✨</button>
+
+    <div id="result">
+        <div id="visualResult"></div>
+        <button id="copyBtn" class="btn-copy" onclick="copyResult()">📋 결과 복사하기</button>
+    </div>
+
+    <button class="btn-reset" onclick="resetAll()">데이터 전체 초기화</button>
+</div>
+
+<script>
+    window.onload = () => {
+        const savedNames = localStorage.getItem('match_names');
+        const savedLocs = JSON.parse(localStorage.getItem('match_locs'));
+        if (savedNames) document.getElementById('nameInput').value = savedNames;
+        if (savedLocs && savedLocs.length > 0) {
+            savedLocs.forEach(loc => addLocation(loc.name, loc.count));
+        } else {
+            addLocation("장소 1", 2);
+        }
+        updateCounts();
+    };
+
+    function updateCounts() {
+        const names = document.getElementById('nameInput').value.split(/[\s,]+/).filter(n => n.trim() !== "");
+        const count = names.length;
+        
+        // 상단바와 실시간 표시창 동시 업데이트
+        document.getElementById('totalNameCountTop').innerText = count;
+        document.getElementById('realtimeCount').innerText = count;
+
+        let cap = 0;
+        document.querySelectorAll('.loc-count').forEach(i => cap += parseInt(i.value) || 0);
+        document.getElementById('totalCapacityCount').innerText = cap;
+    }
+
+    function saveData() {
+        updateCounts();
+        localStorage.setItem('match_names', document.getElementById('nameInput').value);
+        const locs = Array.from(document.querySelectorAll('.location-item')).map(item => ({
+            name: item.querySelector('.loc-name').value,
+            count: item.querySelector('.loc-count').value
+        }));
+        localStorage.setItem('match_locs', JSON.stringify(locs));
+    }
+
+    function addLocation(name = "", count = "") {
+        const container = document.getElementById('locationList');
+        const div = document.createElement('div');
+        div.className = 'location-item';
+        div.innerHTML = `
+            <input type="text" class="loc-name" placeholder="장소명" value="${name}" oninput="saveData()">
+            <input type="number" class="loc-count" placeholder="명" value="${count}" oninput="saveData()">
+            <button class="btn-remove" onclick="this.parentElement.remove(); saveData();">✕</button>
+        `;
+        container.appendChild(div);
+        updateCounts();
+    }
+
+    let resultText = "";
+
+    function startMatching() {
+        const namesIn = document.getElementById('nameInput').value.split(/[\s,]+/).filter(n => n.trim() !== "");
+        if (namesIn.length === 0) return alert("참여자 이름을 먼저 입력해주세요!");
+
+        let names = [...namesIn];
+        for (let i = names.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [names[i], names[j]] = [names[j], names[i]];
+        }
+
+        const visualDiv = document.getElementById('visualResult');
+        visualDiv.innerHTML = '';
+        resultText = "📢 [랜덤 매칭 결과]\n";
+
+        let idx = 0;
+        document.querySelectorAll('.location-item').forEach(item => {
+            const locName = item.querySelector('.loc-name').value || "장소";
+            const locCount = parseInt(item.querySelector('.loc-count').value) || 0;
+            const assigned = names.slice(idx, idx + locCount);
+            idx += locCount;
+
+            if (assigned.length > 0) {
+                const card = document.createElement('div');
+                card.className = 'result-card';
+                card.innerHTML = `<h4>📌 ${locName} (${assigned.length}명)</h4>`;
+                assigned.forEach(name => card.innerHTML += `<span class="name-tag">${name}</span>`);
+                visualDiv.appendChild(card);
+                resultText += `\n[${locName}]\n- ${assigned.join(', ')}\n`;
+            }
+        });
+
+        const leftovers = names.slice(idx);
+        if (leftovers.length > 0) {
+            const card = document.createElement('div');
+            card.className = 'result-card';
+            card.style.borderLeftColor = '#999';
+            card.innerHTML = `<h4 style="color:#666;">⚠️ 미배정 (${leftovers.length}명)</h4>`;
+            leftovers.forEach(name => card.innerHTML += `<span class="name-tag" style="background:#eee; color:#666;">${name}</span>`);
+            visualDiv.appendChild(card);
+            resultText += `\n[미배정 인원]\n- ${leftovers.join(', ')}\n`;
+        }
+
+        document.getElementById('copyBtn').style.display = 'block';
+        visualDiv.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function copyResult() {
+        navigator.clipboard.writeText(resultText).then(() => {
+            const btn = document.getElementById('copyBtn');
+            btn.innerText = "✅ 복사되었습니다!";
+            setTimeout(() => btn.innerText = "📋 결과 복사하기", 2000);
+        });
+    }
+
+    function resetAll() {
+        if(confirm("모든 입력 내용과 저장된 데이터를 삭제하시겠습니까?")) {
+            localStorage.clear();
+            location.reload();
+        }
+    }
+</script>
+
+</body>
+</html>
